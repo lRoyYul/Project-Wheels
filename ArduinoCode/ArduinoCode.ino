@@ -1,48 +1,51 @@
-const int pushButtonPin = 7;  
-const int leftButtonPin = 8;
-const int rightButtonPin = 12; 
-const int pullButtonPin = 7; 
-const int forwardPotPin = A0;  
-const int directionPotPin = A1;
+const int c1PushButtonPin = 7;  
+const int c1LeftButtonPin = 8;
+const int c1RightButtonPin = 12; 
+const int c1PullButtonPin = 7; 
+const int c1ForwardPotPin = A0;  
+const int c1DirectionPotPin = A1;
+const int c1BackButtonPin = 5;
 
 void setup() {
-  pinMode(pushButtonPin, INPUT_PULLUP);
-  pinMode(leftButtonPin, INPUT_PULLUP);
-  pinMode(rightButtonPin, INPUT_PULLUP);
-  pinMode(pullButtonPin, INPUT_PULLUP);
+  pinMode(c1PushButtonPin, INPUT_PULLUP);
+  pinMode(c1LeftButtonPin, INPUT_PULLUP);
+  pinMode(c1RightButtonPin, INPUT_PULLUP);
+  pinMode(c1PullButtonPin, INPUT_PULLUP);
+  pinMode(c1BackButtonPin, INPUT_PULLUP);
 
   Serial.begin(9600);
 }
 
 void loop() {
-  int pushButtonState = digitalRead(pushButtonPin);
-  int leftButtonState = digitalRead(leftButtonPin);
-  int rightButtonState = digitalRead(rightButtonPin);
-  int pullButtonState = digitalRead(pullButtonPin);
+  int c1PushButtonState = digitalRead(c1PushButtonPin);
+  int c1LeftButtonState = digitalRead(c1LeftButtonPin);
+  int c1RightButtonState = digitalRead(c1RightButtonPin);
+  int c1PullButtonState = digitalRead(c1PullButtonPin);
+  int c1BackButtonState = digitalRead(c1BackButtonPin);
   
 
-  if (pushButtonState != LOW && pushButtonState != HIGH) pushButtonState = 0;
-  if (leftButtonState != LOW && leftButtonState != HIGH) leftButtonState = 0;
-  if (rightButtonState != LOW && rightButtonState != HIGH) rightButtonState = 0;
-  if (pullButtonState != LOW && pullButtonState != HIGH) pullButtonState = 0;
+  if (c1PushButtonState != LOW && c1PushButtonState != HIGH) c1PushButtonState = 0;
+  if (c1LeftButtonState != LOW && c1LeftButtonState != HIGH) c1LeftButtonState = 0;
+  if (c1RightButtonState != LOW && c1RightButtonState != HIGH) c1RightButtonState = 0;
+  if (c1PullButtonState != LOW && c1PullButtonState != HIGH) c1PullButtonState = 0;
+  if (c1BackButtonState != LOW && c1BackButtonState != HIGH) c1BackButtonState = 0;
 
-  int rawforwardValue = analogRead(forwardPotPin);
-  int rawdirectionValue = analogRead(directionPotPin);
+  int c1RawforwardValue = analogRead(c1ForwardPotPin);
+  int c1RawdirectionValue = analogRead(c1DirectionPotPin);
 
-  if (rawforwardValue < 10) rawforwardValue = 0;
-  if (rawdirectionValue < 10) rawdirectionValue = 0;
+  if (c1RawforwardValue < 10) c1RawforwardValue = 0;
+  if (c1RawdirectionValue < 10) c1RawdirectionValue = 0;
 
-  Serial.print(pushButtonState);
+  Serial.print("C1: ");
+  Serial.print(c1PushButtonState);
   Serial.print(",");
-  Serial.print(rawforwardValue);
+  Serial.print(c1LeftButtonState);
   Serial.print(",");
-  Serial.print(rawdirectionValue);
+  Serial.print(c1RightButtonState);
   Serial.print(",");
-  Serial.print(leftButtonState);
+  Serial.print(c1BackButtonState);
   Serial.print(",");
-  Serial.print(rightButtonState);
-  Serial.print(",");
-  Serial.println(pullButtonState);
-
+  Serial.println(c1RawdirectionValue);
+  
   delay(10);
 }
