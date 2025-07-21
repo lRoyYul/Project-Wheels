@@ -1,4 +1,4 @@
-const int pushButtonPin = 7;  
+ const int pushButtonPin = 7;  
 const int leftButtonPin = 8;
 const int rightButtonPin = 12; 
 const int pullButtonPin = 7; 
