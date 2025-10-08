@@ -53,19 +53,19 @@ def main():
   
   A_BTN = ecodes.BTN_SOUTH
 
-  
-  motor_off()
-  for event in dev.read_loop():
-    if event.type == ecodes.EV_KEY:
-      keyevent = categorize(event)
-      print(keyevent)
-      if keyevent.scancode == A_BTN:
-        if keyevent.keystate == 1:
-          motor_on()
-          print("on")
-        elif keyevent.keystate == 0:
-          motor_off()
-          print("off")
+  with pick_gamepad() as dev:
+    motor_off()
+    for event in dev.read_loop():
+      if event.type == ecodes.EV_KEY:
+        keyevent = categorize(event)
+        print(keyevent)
+        if keyevent.scancode == A_BTN:
+          if keyevent.keystate == 1:
+            motor_on()
+            print("on")
+          elif keyevent.keystate == 0:
+            motor_off()
+            print("off")
 
 if__name__ == "__main__":
       try:
