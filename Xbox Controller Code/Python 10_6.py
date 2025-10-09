@@ -18,7 +18,7 @@ def pick_gamepad():
     return InputDevice(devs[0])
   raise RuntimeError("device not found")
 
-GPIO.setupmode(GPIO.BCM)
+GPIO.setmode(GPIO.BCM)
 GPIO.setup(IN1, GPIO.OUT)
 GPIO.setup(IN2, GPIO.OUT)
 GPIO.setup(ENA, GPIO.OUT)
@@ -53,19 +53,18 @@ def main():
   
   A_BTN = ecodes.BTN_SOUTH
 
-  with pick_gamepad() as dev:
-    motor_off()
-    for event in dev.read_loop():
-      if event.type == ecodes.EV_KEY:
-        keyevent = categorize(event)
-        print(keyevent)
-        if keyevent.scancode == A_BTN:
-          if keyevent.keystate == 1:
-            motor_on()
-            print("on")
-          elif keyevent.keystate == 0:
-            motor_off()
-            print("off")
+  motor_off()
+  for event in dev.read_loop():
+    if event.type == ecodes.EV_KEY:
+      keyevent = categorize(event)
+      print(keyevent)
+      if keyevent.scancode == A_BTN:
+        if keyevent.keystate == 1:
+          motor_on()
+          print("on")
+        elif keyevent.keystate == 0:
+          motor_off()
+          print("off")
 
 if__name__ == "__main__":
       try:
@@ -73,9 +72,3 @@ if__name__ == "__main__":
       except Exception as e:
         print("Error:", e)
         cleanup_and_exit(1)
-Exception ignored in: <function PWM.__del__ at 0x7fff50eca0c0>
-traceback (most recent call last):
-File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 179, in __del__
-File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 202, in sotp
-File "/usr/lib/python3/dist-packages/lgpio.py", line 1084, in tx_pwm
-TypeError: unsuported Operand types(s) for &: 'NoneType' and 'int'
