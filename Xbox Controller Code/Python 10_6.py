@@ -3,9 +3,12 @@ from evdev import InputDevice, categorize, ecodes, list_devices
 import RPi.GPIO as GPIO
 
 ENA = 12
+ENB = 22
 IN1 = 5
 IN2 = 6
-DUTY = 70
+IN3 = 17
+IN4 = 27
+DUTY = 100
 
 def pick_gamepad():
     # Prefer Wireless; fall back to Adaptive; otherwise raise
@@ -34,23 +37,35 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(IN1, GPIO.OUT)
 GPIO.setup(IN2, GPIO.OUT)
 GPIO.setup(ENA, GPIO.OUT)
+GPIO.setup(IN3, GPIO.OUT)
+GPIO.setup(IN4, GPIO.OUT)
+GPIO.setup(ENB, GPIO.OUT)
 pwm = GPIO.PWM(ENA, 1000)
 pwm.start(0)
+pwm2 = GPIO.PWM(ENB, 1000)
+pwm2.start(0)
 
 def motor_on():
     GPIO.output(IN1, GPIO.HIGH)
     GPIO.output(IN2, GPIO.LOW)
+    GPIO.output(IN3, GPIO.HIGH)
+    GPIO.output(IN4, GPIO.LOW)
     pwm.ChangeDutyCycle(DUTY)
+    pwm2.ChangeDutyCycle(DUTY)
 
 def motor_off():
     GPIO.output(IN1, GPIO.LOW)
     GPIO.output(IN2, GPIO.LOW)
     pwm.ChangeDutyCycle(0)
+    GPIO.output(IN3, GPIO.LOW)
+    GPIO.output(IN4, GPIO.LOW)
+    pwm2.ChangeDutyCycle(0)
 
 def cleanup_and_exit(code=0):
     try:
         motor_off()
         pwm.stop()
+        pwm2.stop()
         GPIO.cleanup()
     finally:
         sys.exit(code)
