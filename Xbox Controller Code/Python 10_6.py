@@ -8,16 +8,27 @@ IN2 = 6
 DUTY = 70
 
 def pick_gamepad():
-  for path in list_devices():
-    dev = InputDevice(path)
-    name = (dev.name or "").lower()
-    if any(k in name for k in ["xbox", "adaptive", "gamepad", "controller", "joystick"]):
-      return dev
-  devs = list_devices()
-  if devs:
-    child = InputDevice(devs[0])
-    return child
-  raise RuntimeError("device not found")
+    # Prefer Wireless; fall back to Adaptive; otherwise raise
+    want_primary = "xbox wireless controller"
+    want_fallback = "xbox adaptive controller"
+
+    primary = None
+    fallback = None
+
+    for path in list_devices():
+        dev = InputDevice(path)
+        name = (dev.name or "").strip().lower()
+        if name == want_primary:
+            primary = dev
+            break                     # best possible match
+        if fallback is None and name == want_fallback:
+            fallback = dev            # remember but keep looking for primary
+
+    if primary:
+        return primary
+    if fallback:
+        return fallback
+    raise RuntimeError("Supported controller not found (need Xbox Wireless Controller or Xbox Adaptive Controller)")
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(IN1, GPIO.OUT)
@@ -27,50 +38,49 @@ pwm = GPIO.PWM(ENA, 1000)
 pwm.start(0)
 
 def motor_on():
-  GPIO.output(IN1, GPIO.HIGH)
-  GPIO.output(IN2, GPIO.LOW)
-  pwm.ChangeDutyCycle(DUTY)
+    GPIO.output(IN1, GPIO.HIGH)
+    GPIO.output(IN2, GPIO.LOW)
+    pwm.ChangeDutyCycle(DUTY)
 
 def motor_off():
-  GPIO.output(IN1, GPIO.LOW)
-  GPIO.output(IN2, GPIO.LOW)
-  pwm.ChangeDutyCycle(0)
+    GPIO.output(IN1, GPIO.LOW)
+    GPIO.output(IN2, GPIO.LOW)
+    pwm.ChangeDutyCycle(0)
 
 def cleanup_and_exit(code=0):
-  try:
-   motor_off()
-   pwm.stop()
-   GPIO.cleanup()
-  finally:
-   sys.exit(code)
+    try:
+        motor_off()
+        pwm.stop()
+        GPIO.cleanup()
+    finally:
+        sys.exit(code)
 
 def main():
-  signal.signal(signal.SIGINT, lambda s,f: cleanup_and_exit(0))
-  signal.signal(signal.SIGTERM, lambda s,f: cleanup_and_exit(0))
-  
-  dev = pick_gamepad()
-  print(f"Using: {dev.path} ({dev.name})")
-  print("start")
-  
-  A_BTN = ecodes.BTN_SOUTH
-  
+    signal.signal(signal.SIGINT,  lambda s, f: cleanup_and_exit(0))
+    signal.signal(signal.SIGTERM, lambda s, f: cleanup_and_exit(0))
 
-  motor_off()
-  for event in dev.read_loop():
-    if event.type == ecodes.EV_KEY:
-      keyevent = categorize(event)
-      print(keyevent)
-      if keyevent.scancode == A_BTN:
-        if keyevent.keystate == 1:
-          motor_on()
-          print("on")
-        elif keyevent.keystate == 0:
-          motor_off()
-          print("off")
+    dev = pick_gamepad()
+    print(f"Using: {dev.path} ({dev.name})")
+    print("start")
 
-if__name__ == "__main__":
-      try:
+    A_BTN = ecodes.BTN_SOUTH
+
+    motor_off()
+    for event in dev.read_loop():
+        if event.type == ecodes.EV_KEY:
+            keyevent = categorize(event)
+            print(keyevent)
+            if keyevent.scancode == A_BTN:
+                if keyevent.keystate == 1:      # key down
+                    motor_on()
+                    print("on")
+                elif keyevent.keystate == 0:    # key up
+                    motor_off()
+                    print("off")
+
+if __name__ == "__main__":
+    try:
         main()
-      except Exception as e:
+    except Exception as e:
         print("Error:", e)
         cleanup_and_exit(1)
