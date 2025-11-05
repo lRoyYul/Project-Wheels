@@ -15,7 +15,8 @@ def pick_gamepad():
       return dev
   devs = list_devices()
   if devs:
-    return InputDevice(devs[0])
+    child = InputDevice(devs[0])
+    return child
   raise RuntimeError("device not found")
 
 GPIO.setmode(GPIO.BCM)
@@ -47,7 +48,7 @@ def main():
   signal.signal(signal.SIGINT, lambda s,f: cleanup_and_exit(0))
   signal.signal(signal.SIGTERM, lambda s,f: cleanup_and_exit(0))
   
-  dev = InputDevice('/dev/input/event10')
+  dev = pick_gamepad()
   print(f"Using: {dev.path} ({dev.name})")
   print("start")
   
