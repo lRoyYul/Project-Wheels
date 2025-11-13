@@ -34,7 +34,7 @@ def setup_gpio():
 
 def drive_forward():
     GPIO.output(IN1, GPIO.HIGH); GPIO.output(IN2, GPIO.LOW)
-    GPIO.output(IN3, GPIO.HIGH); GPIO.output(IN4, GPIO.LOW) #THIS LINE NO WORK
+    GPIO.output(IN3, GPIO.HIGH); GPIO.output(IN4, GPIO.LOW)
 
 def drive_backward():
     GPIO.output(IN1, GPIO.LOW);  GPIO.output(IN2, GPIO.HIGH)
