@@ -1,9 +1,9 @@
-import sys, signal, time, errno
+import sys, signal, time, errno, os
 from select import select
 from evdev import InputDevice, ecodes, list_devices
 import RPi.GPIO as GPIO
 from oled_display import OLEDDisplay
-from button_logger import ButtonPressLogger
+from button_logger import ButtonPressLogger, timestamped_output_path
 
 button_logger = None
 
@@ -24,6 +24,10 @@ STEER_LEN  = 22
 
 WANT_NORMAL   = "xbox wireless controller"
 WANT_ADAPTIVE = "xbox adaptive controller"
+
+WIRELESS_LEFT_JOYSTICK_BUTTON = ecodes.BTN_THUMBL
+WIRELESS_RIGHT_JOYSTICK_BUTTON = ecodes.BTN_THUMBR
+LOG_DIRECTORY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
 
 PWM_FREQ = 500
 
@@ -246,6 +250,13 @@ def scan_controllers():
 def hat_dir(v):  # map D-pad value to -1/0/1
     return -1 if v < 0 else (1 if v > 0 else 0)
 
+def print_combo_state(y_pressed, left_joystick_pressed, right_joystick_pressed):
+    print(
+        "Wireless combo state: "
+        f"Y={y_pressed}, L3={left_joystick_pressed}, R3={right_joystick_pressed}",
+        flush=True,
+    )
+
 def main():
     global xac_enabled, maxspeed, data_collect_on, button_logger
     
@@ -257,7 +268,9 @@ def main():
     
     oled=OLEDDisplay()
     oled.update(maxspeed, data_collect_on)
-    button_logger = ButtonPressLogger()
+    os.makedirs(LOG_DIRECTORY, exist_ok=True)
+    button_logger = ButtonPressLogger(timestamped_output_path(LOG_DIRECTORY))
+    print(f"Button logs: {os.path.abspath(LOG_DIRECTORY)}", flush=True)
 
     normal, adaptive = scan_controllers()
     devs = [d for d in (normal, adaptive) if d is not None]
@@ -266,6 +279,10 @@ def main():
 
     norm_x = norm_y = 0
     adap_x = adap_y = 0
+    wireless_y_pressed = False
+    wireless_left_joystick_pressed = False
+    wireless_right_joystick_pressed = False
+    wireless_combo_active = False
 
     while True:
         # If any controller missing, keep scanning to reattach
@@ -305,6 +322,10 @@ def main():
                     except: pass
                     if normal is not None and dev.fd == normal.fd:
                         normal = None; norm_x = norm_y = 0
+                        wireless_y_pressed = False
+                        wireless_left_joystick_pressed = False
+                        wireless_right_joystick_pressed = False
+                        wireless_combo_active = False
                     if adaptive is not None and dev.fd == adaptive.fd:
                         adaptive = None; adap_x = adap_y = 0
                     devs = [x for x in devs if x is not dev]
@@ -320,6 +341,36 @@ def main():
 
             for e in events:
                 button_logger.process_event(dev, e)
+
+                if is_norm:
+                    previous_combo_state = (
+                        wireless_y_pressed,
+                        wireless_left_joystick_pressed,
+                        wireless_right_joystick_pressed,
+                    )
+                    if e.type == ecodes.EV_KEY and e.code == ecodes.BTN_NORTH:
+                        wireless_y_pressed = e.value == 1
+                    elif e.type == ecodes.EV_KEY and e.code == WIRELESS_LEFT_JOYSTICK_BUTTON:
+                        wireless_left_joystick_pressed = e.value == 1
+                    elif e.type == ecodes.EV_KEY and e.code == WIRELESS_RIGHT_JOYSTICK_BUTTON:
+                        wireless_right_joystick_pressed = e.value == 1
+
+                    current_combo_state = (
+                        wireless_y_pressed,
+                        wireless_left_joystick_pressed,
+                        wireless_right_joystick_pressed,
+                    )
+                    if current_combo_state != previous_combo_state:
+                        print_combo_state(*current_combo_state)
+
+                    combo_pressed = (
+                        wireless_left_joystick_pressed
+                        and wireless_right_joystick_pressed
+                    )
+                    if combo_pressed and not wireless_combo_active:
+                        button_logger.start_new_file()
+                    wireless_combo_active = combo_pressed
+
                 if e.type == ecodes.EV_KEY and e.value==1:
                     if is_norm and e.code == ecodes.BTN_SOUTH:
                         xac_enabled = not xac_enabled
