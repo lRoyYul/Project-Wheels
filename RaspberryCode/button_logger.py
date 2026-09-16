@@ -67,8 +67,19 @@ def utc_timestamp(timestamp):
 
 def timestamped_output_path(output_directory, prefix="button_presses"):
     os.makedirs(output_directory, exist_ok=True)
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-    return os.path.join(output_directory, f"{prefix}_{timestamp}.csv")
+    now = datetime.now(timezone.utc)
+    date_part = now.strftime("%Y%m%d")
+    time_part = now.strftime("%H%M%S")
+
+    existing_files = [
+        name
+        for name in os.listdir(output_directory)
+        if name.startswith(f"{date_part}_") and name.endswith(".csv")
+    ]
+    counter = len(existing_files) + 1
+
+    filename = f"{date_part}_{counter}_{time_part}.csv"
+    return os.path.join(output_directory, filename)
 
 
 class ButtonPressLogger:
@@ -186,9 +197,7 @@ def main():
         devices = find_controllers()
         while running:
             if not devices:
-                print("No Xbox controller found; scanning again...", flush=True)
                 time.sleep(1)
-                devices = find_controllers()
                 continue
 
             readable, _, _ = select(devices, [], [], 0.5)
